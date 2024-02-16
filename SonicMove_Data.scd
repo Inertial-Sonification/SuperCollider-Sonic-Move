@@ -110,8 +110,9 @@ s.freeAll;
 ~receiveNSensors.free;
 ~receiveFFT.free;
 ~receiveFFTStats.free;
-~bodyGestureNumber = Dictionary.new();
+//~bodyGestureNumber = Dictionary.new();
 ~maxGestures= 0;
+~xSensIter = 0;
 //measures OSC receiver
 
 ~receiveSensor = OSCFunc.new({|msg, time, addr, recvPort|
@@ -133,7 +134,7 @@ s.freeAll;
 
 			//Code for assembling whole body descriptor
 
-			~xsensValues.keysValuesDo({
+			/*~xsensValues.keysValuesDo({
 				|key, value|
 
 				var max = value.enumerateQuadrantStates();
@@ -146,7 +147,7 @@ s.freeAll;
 
 
 			});
-			~bodyGestureNumber.put(nDancer,totalGesture);
+			~bodyGestureNumber.put(nDancer,totalGesture);*/
 
 
 	},
@@ -159,6 +160,8 @@ s.freeAll;
 
 	}
 	);
+
+	~xSensIter=(~xSensIter+1)&0xffff;
 
 
 

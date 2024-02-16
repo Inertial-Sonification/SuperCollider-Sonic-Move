@@ -1,32 +1,39 @@
 (
 
  SynthDef(\xsensNNFO,
-	{|bus = 0/*28*/, amp = 0.1, variation = 1.5, freq = 50.0, spread = 0.04, modulation = 0.02, xFadeMod = 0.4, inputBus |
+	{|bus = 28, amp = 0.1, variation = 1.5, freq = 50.0, spread = 0.04, modulation = 0.02, xFadeMod = 0.4, inputBus |
 		var out;
-
+/*
 
 		var busses = ~xsensValues.values[~xsensValues.keys.collect({|key|(key.split($|)[1].split($-)[1]).asInteger}).asArray-1].collect({|item| (item).getValueBus });
+		// 12 values for each sensor
 		var measures = busses.collect({|bus| In.kr( bus, bus.numChannels)});
 
+		//2 values for each param channel -> 12 params *2 values *3 sensors= 72
 		var fftData = In.kr(~fftNetwork.getBus,~fftNetwork.getBus.numChannels).clump(2).flop.collect({|item| Mix.kr(item)})/(~fftNetwork.getBus.numChannels/2);
+
+		// 12 values * n combinations (one dancer = 3 -> 12 13 23)
 		var corrData = Mix.kr(In.kr(~correlations.getBusSelf,~correlations.getBusSelf.numChannels))/(~correlations.getBusSelf.numChannels);
-
-		//fftData.poll(label:\fft);
-		//corrData.poll(label:\corr);
-
 
 
 		amp=amp*100.0*( measures.collect({|it|(((it[6]*it[6])+(it[7]*it[7])+(it[8]*it[8])).sqrt) + (((it[9]*it[9])+(it[10]*it[10])+(it[11]*it[11])).sqrt)}).sum);
+
+
+
 
 		amp=Lag.ar((amp.clip(0.06,4.0)-0.06).asAudioRateInput,ControlDur.ir*2.5);
 		fftData = Lag.ar(fftData.asAudioRateInput,ControlDur.ir*2.5);
 		corrData = Lag.ar(corrData.asAudioRateInput,ControlDur.ir*2.5);
 		freq=freq.asAudioRateInput+((400.0*(1.0-(fftData[0]*5.0))));
-		out = {amp*FBNeuron.ar(
+
+		*/
+
+
+		out = {0.7*FBNeuron.ar(
 			(freq*variation).asAudioRateInput,
-			freq,
-			(spread.asAudioRateInput* ((fftData[1]*10.0).asAudioRateInput)).clip(0,16),
-			((modulation.asAudioRateInput*((1.0-(corrData*10.0)).asAudioRateInput))/freq).clip(0,1),
+			freq.asAudioRateInput,
+			spread.asAudioRateInput,//(spread.asAudioRateInput* ((fftData[1]*10.0).asAudioRateInput)).clip(0,16),
+			modulation.asAudioRateInput, //((modulation.asAudioRateInput*((1.0-(corrData*10.0)).asAudioRateInput))/freq).clip(0,1),
 			xFadeMod.asAudioRateInput
 		);}!2;
 		OffsetOut.ar(bus ,Sanitize.ar( Sanitize.ar(out).tanh))
@@ -114,7 +121,7 @@ a.setn(\bus, 0, \amp, 0.2, \variation , 4.9, \freq , 50.0, \spread ,8.0, \modula
 
 
 // noise
-a.setn(\bus, 0, \amp, 0.1, \variation , 7.9, \freq , 500.0, \spread ,1.2, \modulation,0.9 , \xFadeMod,0.00899)
+a.setn(\bus, 28, \amp, 0.1, \variation , 7.9, \freq , 500.0, \spread ,1.2, \modulation,0.9 , \xFadeMod,0.00899)
 
 
 // noise2
@@ -143,12 +150,12 @@ a.setn(\bus, 28, \amp, 0.1, \variation , 0.09, \freq , 1000.0, \spread ,1.2, \mo
 
 
 // suspended low
-a.setn(\bus, 0, \amp, 0.2, \variation , 1.01, \freq , 60.0, \spread ,1.9, \modulation,0.009 , \xFadeMod,0.12)
+a.setn(\bus, 28, \amp, 0.2, \variation , 1.01, \freq , 60.0, \spread ,1.9, \modulation,0.009 , \xFadeMod,0.12)
 
 
 
 //highpitch - add reverb
-a.setn(\bus, 0, \amp, 0.04, \variation , 1.4, \freq , 6000.0, \spread ,1.1, \modulation,0.009 , \xFadeMod,0.12)
+a.setn(\bus, 28, \amp, 0.04, \variation , 1.4, \freq , 6000.0, \spread ,1.1, \modulation,0.009 , \xFadeMod,0.12)
 
 
 
@@ -163,12 +170,12 @@ a.setn(\bus, 28, \amp, 0.04, \variation , 6.0, \freq , 10000.0, \spread ,5.0, \m
 
 
 //highpitch - uncomfortable
-a.setn(\bus, 0, \amp, 0.04, \variation , 1.9, \freq , 10000.0, \spread ,1.01, \modulation,0.02 , \xFadeMod,0.02)
+a.setn(\bus, 28, \amp, 0.04, \variation , 1.9, \freq , 10000.0, \spread ,1.01, \modulation,0.02 , \xFadeMod,0.02)
 
 
 
 //inside a star
-a.setn(\bus, 0, \amp, 0.14, \variation , 1.9, \freq , 40.0, \spread ,1.01, \modulation,0.02 , \xFadeMod,0.02)
+a.setn(\bus, 28, \amp, 0.14, \variation , 1.9, \freq , 40.0, \spread ,1.01, \modulation,0.02 , \xFadeMod,0.02)
 
 
 
@@ -178,17 +185,17 @@ a.setn(\bus, 28, \amp, 0.04, \variation , 2.3, \freq , 400.0, \spread ,8.0, \mod
 
 
 //ghouls
-a.setn(\bus, 0, \amp, 0.04, \variation , 10.3, \freq , 400.0, \spread ,1.7, \modulation,0.00003 , \xFadeMod,0.2)
+a.setn(\bus, 28, \amp, 0.04, \variation , 10.3, \freq , 400.0, \spread ,1.7, \modulation,0.00003 , \xFadeMod,0.2)
 
 
 
 
 //violins
-a.setn(\bus, 0, \amp, 0.04, \variation , 1.3, \freq , 400.0, \spread ,1.7, \modulation,0.03 , \xFadeMod,0.7)
+a.setn(\bus, 28, \amp, 0.1, \variation , 1.3, \freq , 400.0, \spread ,1.7, \modulation,0.03 , \xFadeMod,0.7)
 
 
 //violins2
-a.setn(\bus, 0, \amp, 0.04, \variation , 1.3, \freq , 400.0, \spread ,2.7, \modulation,0.024 , \xFadeMod,0.8)
+a.setn(\bus, 28, \amp, 0.04, \variation , 1.3, \freq , 400.0, \spread ,2.7, \modulation,0.024 , \xFadeMod,0.8)
 
 
 
@@ -196,6 +203,7 @@ a.setn(\bus, 0, \amp, 0.04, \variation , 1.3, \freq , 400.0, \spread ,2.7, \modu
 
 
 
+a.setn(\bus, 28, \amp, 0.1, \variation , 1.1, \freq , 100.0, \spread ,4.0, \modulation,0.003 , \xFadeMod,0.7)
 
 
 ~xsensValues.values[~xsensValues.keys.collect({|key|(key.split($|)[1].split($-)[1]).asInteger.postln}).asArray-1].do({|item| (item).getValueBus })
@@ -209,7 +217,9 @@ values.do({|item|item.getValueBus().postln})
 
 
 
-
+//negative corr = +modulation
+//zero corr vaiation up, frequency up =>
+a.setn(\bus, 0, \amp, 0.1, \variation , 1.0, \freq , 100.0, \spread ,1.7, \modulation,0.001 , \xFadeMod,1.0)
 
 
 
