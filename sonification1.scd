@@ -4,8 +4,12 @@
 	{|bus = 0/*28*/, amp = 0.1, variation = 1.5, freq = 50.0, spread = 0.04, modulation = 0.02, xFadeMod = 0.4, inputBus |
 		var out;
 
+		var nDancers = ~correlations.nDancers;
+		var nSensors = ~correlations.nSensors;
 
-		var busses = ~xsensValues.values[~xsensValues.keys.collect({|key|(key.split($|)[1].split($-)[1]).asInteger}).asArray-1].collect({|item| (item).getValueBus });
+		//var busses = ~xsensValues.values.asArray[ ~xsensValues.keys.asArray.collect({|key|key.postln;(key.split($|)[1].split($-)[1]).asInteger}).order.postln ].postln.collect({|item| (item).getValueBus });
+
+		var busses = nDancers.collect({|i| nSensors.collect({|j|    ~xsensValues.at("dancer-"++(i+1)++"|sensor-"++(j+1)).getValueBus                          }) }).flat;
 
 		// 12 values for each sensor -> after clump 3 -> [3,3,3,3] - euler++jerk++acceleration++angularVelocity
 		var measures = busses.collect({|bus| In.kr( bus, bus.numChannels).clump(3)}); //size [[[3] , 4], 3]
@@ -31,8 +35,8 @@
 			});
 
 		var minMaxCorr;
-		amp=amp*energy;
-
+		amp=(energy.clip(0.3,inf)-0.3) *amp;
+amp=amp/20.0;
 
 
 		// [freq, stddev] for each sensor
@@ -51,33 +55,31 @@
 		minMaxCorr = corrData.collect({|item|
 			var max = -1;
 			var min = 1;
+			item = item[0..2];
 			item.do({
 				|it|
 				max = Select.kr( it>max, [ max ,it]  );
-				min = Select.kr( it<max, [ max ,it]  );
+				min = Select.kr( it<min, [ min ,it]  );
 
-				max = Select.kr( min.abs>max  ,[min,max]);
+				//max = Select.kr( min.abs>max  ,[min,max]);
 
 			});
-			max;
+			[min,max];
 		});
-
-		minMaxCorr = Lag.ar( ( ( abs(minMaxCorr)>0.5 )*(sign(minMaxCorr))).asAudioRateInput
-			,ControlDur.ir*1.5 *(1.0 +( 50.0* (( 1.0 - fftData.flop[0] ))*( 1.0 - fftData.flop[1])      )     ) );
-
+		minMaxCorr = Lag.ar( ( minMaxCorr).asAudioRateInput
+			,ControlDur.ir *(1.0 +( 50.0* (( 1.0 - fftData.flop[0] ))*( 1.0 - fftData.flop[1])      )     ) );
 
 
 
-
-
-		out = amp*FBNeuron.ar(
+		out = (cos( (minMaxCorr.flat + 1.0)*pi).abs)*(amp.stutter(2))*FBNeuron.ar(
 			(freq*variation).asAudioRateInput,
 			freq.asAudioRateInput,
 			spread.asAudioRateInput+(3.0*fftData.flop[1].asAudioRateInput),//* ((fftData[1]*10.0).asAudioRateInput)).clip(0,16),
-			(modulation.asAudioRateInput)+ ( 0.3 * minMaxCorr.poll)  ,//*((1.0-(corrData*10.0)).asAudioRateInput))/freq).clip(0,1),
+			(modulation.asAudioRateInput)+ ( 0.3 * (1.0-(minMaxCorr.flat)))  ,//*((1.0-(corrData*10.0)).asAudioRateInput))/freq).clip(0,1),
 			xFadeMod.asAudioRateInput
 		);
-		out=[out[0]+out[2],out[1]+out[2]];
+
+		out=[out[0]+out[2]+out[4],out[1]+out[3]+out[5]];
 
 		OffsetOut.ar(bus ,Sanitize.ar( Sanitize.ar(out).tanh))
 
@@ -91,6 +93,7 @@
 
 
 a=Synth.new(\xsensNNFO)
+a.setn(\bus, 28, \amp, 1.0, \variation , 1.0, \freq , 100.0, \spread ,1.7, \modulation,0.001 , \xFadeMod,1.0)
 
 a.free
 

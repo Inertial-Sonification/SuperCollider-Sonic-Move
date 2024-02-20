@@ -8,7 +8,7 @@
 
 }.play)
 
-
+Server.default.options.devices
 
 (
 s.options.numWireBufs=512;
@@ -24,6 +24,7 @@ s.options.numControlBusChannels = 16384 * 32;
 //ServerOptions.outDevices;
 Server.default.options.hardwareBufferSize=128;
 Server.default.options.sampleRate=44100;
+
 Server.default.options.device="ASIO : MOTU Pro Audio";
 Server.default.options.numInputBusChannels_(32);
 Server.default.options.numOutputBusChannels_(32);
