@@ -75,7 +75,7 @@
 		preset = preset.flop;
 
 		amp=(((amp.clip(0.1,inf))-0.1)/50.0).clip(0.0,1.0);
-		amp.poll;
+		//amp.poll;
 
 		//\amp, \variation , \freq ,  \spread , \modulation, \xFadeMod
 		freq= Lag.kr( preset[2].stutter(2),lagTime);
@@ -110,7 +110,7 @@
 
 
 (
-a.free;
+~nnSynth.free;
 
 
 ~transport.stop
@@ -118,7 +118,7 @@ a.free;
 )
 
 (
-a=Synth.new(\xsensNNFO);
+~nnSynth=Synth.new(\xsensNNFO);
 
 ~histos = Dictionary.new();
 
@@ -184,13 +184,7 @@ a=Synth.new(\xsensNNFO);
 
 
 }.fork;
-)
 
-
-
-
-
- (
 ~presets = [
 //cloud swarm
   [    0.1,   1.5,  50.0, 3.0, 0.8 , 0.5 ] ,
