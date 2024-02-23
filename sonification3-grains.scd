@@ -22,6 +22,8 @@
 
 ~sample = ~samples.collect({ |item|  Buffer.readChannel(s,item.standardizePath,channels:[0])   });
 
+~sample.do(_.normalize);
+
 
 
 //~sample.free;
@@ -29,7 +31,7 @@
 
 
  SynthDef(\xsensGrain,
-	{|bus = 28, amp = 0.1 |
+	{|bus , amp = 0.1 |
 		var out;
 
 		var nDancers = ~correlations.nDancers;
@@ -40,7 +42,7 @@
 		var busses = nDancers.collect({|i| nSensors.collect({|j|    ~xsensValues.at("dancer-"++(i+1)++"|sensor-"++(j+1)).getValueBus                          }) }).flat;
 
 		// 12 values for each sensor -> after clump 3 -> [3,3,3,3] - euler++jerk++acceleration++angularVelocity
-		var measures = busses.collect({|bus| In.kr( bus, bus.numChannels).clump(3)}); //size [[[3] , 4], 3]
+		var measures = busses.collect({|bus| In.kr( bus, bus.numChannels).clumps([3,3,3,3,4])}); //size [[[3] , 4], 3]
 
 		//2 values for each param channel -> 12 params *2 values *3 sensors= 72 -> out size 2 measures,3 axes, 4 params ,3 sensors
 		var fftData = In.kr(~fftNetwork.getBus,~fftNetwork.getBus.numChannels).clump(2).clump(3).clump(4);             //flop.collect({|item| Mix.kr(item)})/(~fftNetwork.getBus.numChannels/2);
@@ -108,11 +110,10 @@
 		amp=(((amp.clip(0.1,inf))-0.1)/50.0).clip(0.0,1.0).flat;
 
 
-		//(minMaxCorr*((amp*100.0).clip(0,1))).poll;
+		//(minMaxCorr*((amp*100.0).clip(0,1)));
 
 
 
-		//amp.poll;
 
 		//\amp, \variation , \freq ,  \spread , \modulation, \xFadeMod
 		//freq= Lag.kr( preset[2].stutter(2),lagTime);
@@ -122,26 +123,25 @@
 		//xFadeMod = Lag.kr(preset[5].stutter(2),lagTime);
 
 
-
 		out = (((cos( (minMaxCorr.flat + 1.0)*pi).abs+0.3)*(amp.stutter(2))*2.0).flat).collect({
 			|item,i|
 
 			var ptr=  ((   ((measures[i/2][0]).mod(2pi)/2pi)*((measures[i/2][0]).mod(2pi)/2pi)).sum.sqrt).wrap(0.0,1.0);
 			var fftIn = fftData[i/2] ;
-			var wSize =  ((1.0-(fftIn[0]*fftIn[1]*20.0))).clip(0.001,1.0); //higher frequency smaller window
+			var wSize =  ((1.0-(fftIn[0]*fftIn[1]*20.0))).clip(0.01,1.0); //higher frequency smaller window
 			var prob  =  Lag.ar((amp[i/2]*4.0).asAudioRateInput,0.2).clip(0.001,1.0);
 			var wRand = (fftIn[1]*0.1).clip(0.0,1.0);
 			var freqScale = 1.0.asAudioRateInput;
-			var nSample = ((    1.0-((fftIn[1]*5.0).clip(0.0,1.0))    )*1.5*5).clip(0.0,5.0).poll;
+			var nSample = ((    1.0-((fftIn[1]*5.0).clip(0.0,1.0))    )*1.5*5).clip(0.0,5.0).lincurve(0.0,5.0,0.0,5.0,3);
 			var sound =(item.clip(0.0,1.0))* SelectX.ar(nSample , ~sample.collect({|sample| WarpP.ar(1, sample, ptr.asAudioRateInput, freqScale, wSize.asAudioRateInput, windowRandRatio:wRand.asAudioRateInput, prob:prob.asAudioRateInput) }));
 
-			((1.5-(nSample/5.0))*2*sound) + ((nSample/5.0+0.6)*Sanitize.ar(PMWave.ar( Sanitize.ar(sound.tanh), ((0.8+(nSample/25.0)).clip(0.0,0.9999)).asAudioRateInput,(1.0-(0.1 +(0.9 * fftIn[0]))).clip(0.001,0.99).asAudioRateInput, 0.1.asAudioRateInput, 0.00001.asAudioRateInput, 0.1.asAudioRateInput, 0.2.asAudioRateInput,1.0.asAudioRateInput).tanh));
+			(((1.5-(nSample/5.0)))*2*sound) + ((nSample/5.0+0.6)*Sanitize.ar(PMWave.ar( Sanitize.ar(sound.tanh), ((0.6+(nSample/25.0)).clip(0.0,0.9999)).asAudioRateInput,(1.0-(0.1 +(0.9 * fftIn[0]))).clip(0.001,0.99).asAudioRateInput, 0.1.asAudioRateInput, 0.00001.asAudioRateInput, 0.1.asAudioRateInput, 0.2.asAudioRateInput,1.0.asAudioRateInput).tanh));
 
 		});
 
-		out=[out[0]+out[2]+out[4],out[1]+out[3]+out[5]];
+		out=( -3.dbamp)*[out[0]+out[2]+out[4],out[1]+out[3]+out[5]];
 
-		OffsetOut.ar(bus ,Sanitize.ar( Sanitize.ar(out).tanh))
+		OffsetOut.ar(~outputBus.index+2 ,Sanitize.ar( Sanitize.ar(out).tanh))
 
 
 
@@ -157,12 +157,16 @@
 
 
 
-~grainSynth=Synth.new(\xsensGrain);
+~grainSynth=Synth.new(\xsensGrain,target:~pGroup);
 )
 
 
 ~fftNetwork.getFFTStatsDancerAllSensors(1)[0].size
 ~fftNetwork.getBus
+
+
+
+((0 .. 100)/100).lincurve(0.0,1.0,0.0,1.0,-6).plot
 
 
 

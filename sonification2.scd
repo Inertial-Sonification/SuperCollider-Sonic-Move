@@ -1,7 +1,7 @@
 (
 
  SynthDef(\xsensNNFO,
-	{|bus = 28, amp = 0.1, variation = 1.5, freq = 50.0, spread = 0.04, modulation = 0.02, xFadeMod = 0.4, inputBus, preset = #[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] |
+	{|bus , amp = 0.1, variation = 1.5, freq = 50.0, spread = 0.04, modulation = 0.02, xFadeMod = 0.4, inputBus, preset = #[ 0.3,   1.1,  50.0, 3.0, 0.3 , 0.005 , 0.3,   1.1,  50.0, 3.0, 0.3 , 0.005 , 0.3,   1.1,  50.0, 3.0, 0.3 , 0.005 ] |
 		var out;
 
 		var nDancers = ~correlations.nDancers;
@@ -12,7 +12,7 @@
 		var busses = nDancers.collect({|i| nSensors.collect({|j|    ~xsensValues.at("dancer-"++(i+1)++"|sensor-"++(j+1)).getValueBus                          }) }).flat;
 
 		// 12 values for each sensor -> after clump 3 -> [3,3,3,3] - euler++jerk++acceleration++angularVelocity
-		var measures = busses.collect({|bus| In.kr( bus, bus.numChannels).clump(3)}); //size [[[3] , 4], 3]
+		var measures = busses.collect({|bus| In.kr( bus, bus.numChannels).clumps([3,3,3,3,4])}); //size [[[3] , 4], 3]
 
 		//2 values for each param channel -> 12 params *2 values *3 sensors= 72 -> out size 2 measures,3 axes, 4 params ,3 sensors
 		var fftData = In.kr(~fftNetwork.getBus,~fftNetwork.getBus.numChannels).clump(2).clump(3).clump(4);             //flop.collect({|item| Mix.kr(item)})/(~fftNetwork.getBus.numChannels/2);
@@ -28,7 +28,7 @@
 				|item,i|
 				//get acc and radial V
 				item = item.asAudioRateInput;
-			(Integrator.ar( item[2].collect({|item|item*item}).reduce('+').sqrt,0.997).clip(0.3,inf)-0.3)+ //acceleration
+			(Integrator.ar( Lag.ar(item[2].collect({|item|item*item}).reduce('+').sqrt.clip(0.003,inf)-0.003,0.01),0.99).clip(0.01,inf)-0.01)+ //acceleration
 			(item[3].collect({|item|item*item}).reduce('+')) //keep v*v for kinetic energy so no sqrt
 
 			});
@@ -36,14 +36,15 @@
 		var minMaxCorr;
 
 		var lagTime;
+			var nSample ;
 
-		amp=amp*energy;
+		amp= Lag.kr(amp,0.6)*(energy.lincurve(0.0,100.0,0.0,100.0,3));
 
 		// [freq, stddev] for each sensor
 		fftData = fftData.collect({|sensor|  (sensor.collect({ |measure| measure.sum/(measure.size);   }).sum/(sensor.size));      });
 
 
-
+		nSample= ((    1.0-((fftData.flop[1]*5.0).clip(0.0,1.0))    )*1.5).clip(0.0,1.0);
 
 		//organize by combo [ [12,13],  [12,23] , [13,23]]
 
@@ -52,7 +53,7 @@
 			(corrData[1]++corrData[2]).flat];
 
 
-		lagTime = (ControlDur.ir *(1.0 +( 100.0* (( 1.0 - fftData.flop[0] ))*( 1.0 - fftData.flop[1])      )     ));
+		lagTime = 2.0*(ControlDur.ir *(1.0 +( 100.0* (( 1.0 - fftData.flop[0] ))*( 1.0 - fftData.flop[1])      )     ));
 		minMaxCorr = corrData.collect({|item|
 			var max = -1;
 			var min = 1;
@@ -74,8 +75,7 @@
 		preset = preset.clump(6);
 		preset = preset.flop;
 
-		amp=(((amp.clip(0.1,inf))-0.1)/50.0).clip(0.0,1.0);
-		//amp.poll;
+		amp=(((amp.clip(0.001,inf))-0.001)).clip(0.0,1.0);
 
 		//\amp, \variation , \freq ,  \spread , \modulation, \xFadeMod
 		freq= Lag.kr( preset[2].stutter(2),lagTime);
@@ -86,8 +86,8 @@
 
 
 
-		//((cos( (minMaxCorr.flat + 1.0)*pi).abs)*(amp.stutter(2))).poll;
-		out = (cos( (minMaxCorr.flat + 1.0)*pi).abs)*(amp.stutter(2))*FBNeuron.ar(
+		//((cos( (minMaxCorr.flat + 1.0)*pi).abs)*(amp.stutter(2)));
+		out = (((cos( (minMaxCorr.flat + 1.0)*pi).abs*0.5+0.5)*(amp.stutter(2)))*2.0).clip(0.0,1.0)*FBNeuron.ar(
 			(freq*variation).asAudioRateInput,
 			freq.asAudioRateInput,
 			spread.asAudioRateInput+(3.0*fftData.flop[1].asAudioRateInput),//* ((fftData[1]*10.0).asAudioRateInput)).clip(0,16),
@@ -95,9 +95,8 @@
 			xFadeMod.asAudioRateInput
 		);
 
-		out=[out[0]+out[2]+out[4],out[1]+out[3]+out[5]];
-
-		OffsetOut.ar(bus ,Sanitize.ar( Sanitize.ar(out).tanh))
+		out=[out[1]+out[3]+out[5],out[0]+out[2]+out[4]]*(nSample.reduce('*'));
+		OffsetOut.ar(~outputBus ,Sanitize.ar( Sanitize.ar(out/5.0).tanh))
 
 
 
@@ -118,7 +117,9 @@
 )
 
 (
-~nnSynth=Synth.new(\xsensNNFO);
+~transport.stop;
+
+~nnSynth=Synth.new(\xsensNNFO,target:~pGroup);
 
 ~histos = Dictionary.new();
 
@@ -152,17 +153,14 @@
 
 								});
 
-							val=~histos.at(key).histo(10,0,10).maxIndex;
+							val=~histos.at(key).histo(1000,0,1000).maxIndex;
 
-							if(val!=0,{
+							if(val>0,{
+								data[nSensor-1]= ~presets[(val+6)%(~presets.size)];
+							~nnSynth.set(\preset, data.flat);
+								~nnSynth.set(\amp, -20.dbamp);
 
-								data[nSensor-1]=
-								~presets[(val+1)%(~presets.size)];
-
-								a.set(\preset, data.flat);
-
-
-							});
+							},{~nnSynth.set(\amp, -80.dbamp)});
 
 					  }  );
 
@@ -184,6 +182,7 @@
 
 
 }.fork;
+
 
 ~presets = [
 //cloud swarm
@@ -316,6 +315,27 @@
 
 ]
 )
+
+
+
+
+
+~nnSynth.set(\preset, ~presets[3].flat);
+
+~presets.size
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -543,7 +563,7 @@ values.do({|item|item.getValueBus().postln})
 
 
 
-
+10.lincurve(0.0,100.0,0.0,100.0,2)
 
 
 

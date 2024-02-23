@@ -29,8 +29,12 @@ Server.default.options.device="ASIO : MOTU Pro Audio";
 Server.default.options.numInputBusChannels_(32);
 Server.default.options.numOutputBusChannels_(32);
 //Server.default.options;
-s.boot;
 
+s.waitForBoot({
+	~pGroup = ParGroup.new;
+
+	~outputBus = Bus.audio(s, 12);
+});
 )
 
 

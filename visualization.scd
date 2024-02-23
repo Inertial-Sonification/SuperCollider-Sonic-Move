@@ -1,21 +1,21 @@
 (
+~window  = ~correlations.nDancers.collect({|nDancer|Window("Xsens dancer-"++(nDancer+1),Rect(0, 0, 500, 500),scroll:true).front;});
 
 ~correlations.nDancers.do({
 		|nDancer|
 
-var window  = Window("Xsens dancer-"++(nDancer+1),Rect(0, 0, 500, 500),scroll:true).front;
-var textsVals = {StaticText(window, Rect(0 , 0 , 200, 20))}!(~correlations.nSensors * 4);
+var textsVals = {StaticText(~window[nDancer], Rect(0 , 0 , 200, 20))}!(~correlations.nSensors * 4);
 
-var textsCorrs = {StaticText(window, Rect(0 , 0 , 200, 20))}!(~correlations.getCombosSelf().size * 4);
+var textsCorrs = {StaticText(~window[nDancer], Rect(0 , 0 , 200, 20))}!(~correlations.getCombosSelf().size * 4);
 
-//var textsCorrsOthers = {StaticText(window, Rect(0 , 0 , 200, 20))}!(~correlations.getCombosOthers().size * 4);
-
-
-var textsFFTs = {StaticText(window, Rect(0 , 0 , 200, 20))}!(~correlations.nSensors * 3);
+//var textsCorrsOthers = {StaticText(~window[nDancer], Rect(0 , 0 , 200, 20))}!(~correlations.getCombosOthers().size * 4);
 
 
-window.view.background_(Color.white);
-window.view.decorator = FlowLayout(window.view.bounds);
+var textsFFTs = {StaticText(~window[nDancer], Rect(0 , 0 , 200, 20))}!(~correlations.nSensors * 3);
+
+
+~window[nDancer].view.background_(Color.white);
+~window[nDancer].view.decorator = FlowLayout(~window[nDancer].view.bounds);
 
 
 
@@ -24,7 +24,7 @@ window.view.decorator = FlowLayout(window.view.bounds);
 
 
 
-window.drawFunc = {
+~window[nDancer].drawFunc = {
 	var start;
     Pen.moveTo(0@0);
 
@@ -63,7 +63,7 @@ window.drawFunc = {
 
 				Pen.moveTo(0@0);
 
-		//windowText[0].string=4.rand.asString;
+		//~window[nDancer]Text[0].string=4.rand.asString;
 
 				Pen.color = Color.new255(200,255,0,128);
 
@@ -276,7 +276,7 @@ window.drawFunc = {
 
 };
 
-	{ while { window.isClosed.not } { window.refresh; 0.04.wait; } }.fork(AppClock);
+	{ while { ~window[nDancer].isClosed.not } { ~window[nDancer].refresh; 0.04.wait; } }.fork(AppClock);
 
 
 
@@ -294,8 +294,7 @@ window.drawFunc = {
 ~fftNetwork.getFFTStatsSensor(0,0)
 
 
-
-
+~window[0].states
 
 
 

@@ -100,7 +100,7 @@ w.drawFunc = {
 
 
 (
-s.freeAll;
+//s.freeAll;
 ~xsensValues = Dictionary.new();
 
 ~receiveSensor.free;
@@ -153,7 +153,7 @@ s.freeAll;
 	},
 	{
 				//key doesn't exist - set speed to 0 and add position/key
-			var elem = SonicMoveXsensData.new(msg[2..4], msg[5], msg[6], msg[7..9], msg[10], msg[11..13], msg[14..16], msg[17..20]);
+			var elem = SonicMoveXsensData.new(msg[2..4], msg[5], msg[6], msg[7..9], msg[10], msg[11..13], msg[14..16], msg[17..20],5);
 
 			~xsensValues.put(key, elem);
 

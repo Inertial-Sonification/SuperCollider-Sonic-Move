@@ -1,7 +1,57 @@
+
+~waveform = Signal.chebyFill(513, {{1.0.rand2}!rrand(1,20)}.value  )
+~waveBuf.sendCollection(~waveform.asWavetableNoWrap);
+
+
+
+
+
+~waveBuf = Buffer.alloc(s,1024, 1);
+
 (
 
 
-SynthDef(\xsensKS,
+
+
+~shaper= {
+	|add=0.0, mult=1.0,freq=100.0|
+	var sig= 0.1* Shaper.ar(~waveBuf,SinOsc.ar(freq,0.0,mult,add).wrap(-1.0,1.0));
+	OffsetOut.ar(~outputBus.index+6, sig.dup);
+}.play
+
+
+
+
+)
+
+~shaper.free
+~shaper.set(\mult, 123.234325,\add, 0.7)
+
+{{1.0.rand}!rrand(1,20)}.value
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+(
+
+
+SynthDef(\xsensShaper,
 	{|bus , amp = 0.1 |
 		var out;
 
@@ -36,7 +86,7 @@ SynthDef(\xsensKS,
 
 		var minMaxCorr;
 
-		var lagTime;
+		var lagTime, motion;
 
 
 		amp=amp*energy;
@@ -84,42 +134,30 @@ SynthDef(\xsensKS,
 		//(minMaxCorr*((amp*100.0).clip(0,1)));
 
 
-
-
 		//\amp, \variation , \freq ,  \spread , \modulation, \xFadeMod
 		//freq= Lag.kr( preset[2].stutter(2),lagTime);
 		//variation = Lag.kr(preset[1].stutter(2),lagTime);
 		//spread = Lag.kr(preset[3].stutter(2),lagTime);
 		//modulation = Lag.kr(preset[4].stutter(2),lagTime);
 		//xFadeMod = Lag.kr(preset[5].stutter(2),lagTime);
-
-
-
+		motion =  ((((1.0-(( (fftData.flop[1]) *9.0).clip(0.0,1.0)))).clip(0.0,1.0)));
 		out = (((cos( (minMaxCorr.flat + 1.0)*pi).abs+0.3)*(amp.stutter(2))*2.0).flat).collect({
 			|item,i|
 
-			var ptr=  ((   ((measures[i/2][0]).mod(2pi)/2pi)*((measures[i/2][0]).mod(2pi)/2pi)).sum.sqrt).wrap(0.0,1.0);
-			var fftIn = fftData[i/2] ;
-			//jerk trigger
-			var trig =Trig.ar((((measures[i/2][1])*(measures[i/2][1])).sum.sqrt > 0.5).asAudioRateInput,0.2);
-			var env = EnvGen.ar(Env.perc(0.001,1.9), trig);
-			var env1 = EnvGen.ar(Env.perc(0.001,1.0), trig);
-			var nSample = ((    1.0-((fftIn[1]*5.0).clip(0.0,1.0))    )*1.5).clip(0.0,1.0);
-
-			var freq = Latch.ar(  (( (1.0-(Lag.kr(fftIn[0],0.1)*4.0)).clip(0.0001,10000.0)*500.0)+0.0001).reciprocal.asAudioRateInput, trig);
-			var sound =(item.clip(0.0,1.0)+env1)* (KStrongDecay.ar((env*(WhiteNoise.ar)),((0.5* freq.clip(0.000001,0.1))) , (0.999+( ((1.0-fftIn[1])*0.001 ).clip(0.0,0.001))).asAudioRateInput ,0.19.asAudioRateInput  ));
+			var sound =(Slew.ar((item*10.0).clip(0.0,1.0),0.937,0.939))*Lag.ar(Lag.ar(motion[i/2].asAudioRateInput,0.8)>0.4,1.7)*
+			(Shaper.ar(~waveBuf,SinOsc.ar(30.0+(10.0*(item*i)),0.0,(item*i)+((((measures[i/2][4][1])/4.0)+((measures[i/2][4][0])))*10.0),item+i+((measures[i/2][4][2]))).wrap(-1.0,1.0))
+		    +Shaper.ar(~waveBuf,SinOsc.ar(30.0+(10.0*(item*i)),0.0,(item*i)+((((measures[i/2][4][1]))+((measures[i/2][4][0])))),item+i+((measures[i/2][4][2]))).wrap(-1.0,1.0)));
 
 
-
-			sound=((1.5-(nSample))*0.1*sound) + ((nSample+0.3)*(item.clip(0.0,1.0))*4.0*Sanitize.ar(PMWave.ar( Sanitize.ar(sound.tanh), ((0.97+((2pi*nSample).sin.abs*0.03)).clip(0.0,0.9999)).asAudioRateInput,((0.1 +(0.9 * fftIn[0]))).clip(0.001,0.99).asAudioRateInput, 0.1.asAudioRateInput, 0.00001.asAudioRateInput, 0.1.asAudioRateInput, 0.2.asAudioRateInput,1.0.asAudioRateInput).tanh));
-			Sanitize.ar( (nSample/5.0)*sound.tanh);
+		//	sound=((1.5-(nSample))*0.1*sound) + ((nSample+0.3)*(item.clip(0.0,1.0))*4.0*Sanitize.ar(PMWave.ar( Sanitize.ar(sound.tanh), ((0.2+((2pi*nSample).sin.abs*0.8)).clip(0.0,0.9999)).asAudioRateInput,((0.1 +(0.9 * fftIn[0]))).clip(0.001,0.99).asAudioRateInput, 0.1.asAudioRateInput, 0.00001.asAudioRateInput, 0.1.asAudioRateInput, 0.2.asAudioRateInput,1.0.asAudioRateInput).tanh));
+			Sanitize.ar(sound.tanh);
 
 		});
 
-		out=( 3.dbamp)*[out[0]+out[2]+out[4],out[1]+out[3]+out[5]];
+		out=( -12.dbamp)*[out[0]+out[2]+out[4],out[1]+out[3]+out[5]];
 
 
-		OffsetOut.ar(~outputBus.index+4 ,Sanitize.ar( Sanitize.ar(out).tanh))
+		OffsetOut.ar(~outputBus.index+6 ,Sanitize.ar( Sanitize.ar(out).tanh))
 
 
 
@@ -127,13 +165,12 @@ SynthDef(\xsensKS,
 )
 
 
+
+
+
 (
-~xsensKS.free;
+~xsensShaper.free;
 
 
-
-~xsensKS=Synth.new(\xsensKS,target:~pGroup);
+~xsensShaper=Synth.new(\xsensShaper,target:~pGroup);
 )
-
-
-2pi.sin
