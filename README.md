@@ -1,2 +1,2 @@
 # SuperCollider-SonicMove
- Repo for current and test code for the Sonic Move project
+ Repo for sonification models, current and test code for the Sonic Move project
