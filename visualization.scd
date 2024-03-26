@@ -231,7 +231,7 @@ var textsFFTs = {StaticText(~window[nDancer], Rect(0 , 0 , 200, 20))}!(~correlat
 		~fftNetwork.getFFTDancerAllSensors(nDancer).do({
 		|sensorData, nSensor|
 			var rescale=[1,2,0.07,1];//1,2,0.07,1
-
+			sensorData = sensorData[0..8];
 			sensorData.do({
 			|dataType, nDatum|
 				var startN = start + Point( (nDancer * 400)+(300*(nDatum%3)) , (nSensor*10*12));
@@ -328,7 +328,7 @@ var textsFFTs = {StaticText(~window[nDancer], Rect(0 , 0 , 200, 20))}!(~correlat
 ~xsensValues.at("dancer-1|sensor-1").acceleration
 ~fftNetwork.getFFTDancerAllSensors(1)[0].size
 
-
+~fftNetwork.getFFTDancerAllSensors(1).size
 
 MethodOverride.printAll
-
+(0..11)[0..8].size

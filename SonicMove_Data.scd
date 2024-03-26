@@ -1,5 +1,4 @@
 
-
 //FROM CAMERAS
 // format of message is [/address,  key , 3 coords  , 9 coords, ... ]
 
@@ -115,6 +114,8 @@ w.drawFunc = {
 ~xSensIter = 0;
 //measures OSC receiver
 
+
+
 ~receiveSensor = OSCFunc.new({|msg, time, addr, recvPort|
 	//0 address 1 n 2 acc1            3  acc2             4 acc3			5 accTot		  6 T 7 gyro1           8 gyro2             9 gyro3          10 tot gyro          11 mag           12 mag            13 mag            14 euler1         15   euler2        16 euler 3     17 quaternion  x 4
 
@@ -215,10 +216,14 @@ w.drawFunc = {
 },"/xsens-nDancers", recvPort:50003); // path matching
 
 
+
+
 ~receiveNSensors =OSCFunc.new({|msg, time, addr, recvPort|
 
 	var val = msg[1 ..(msg.size-1)] ;
 	~correlations.setNSensors(val[0]);
+
+	//~buffFFTs ?? {~buffFFTs= Buffer.alloc(s, 512, val[0])};
 
 	//~fftNetwork = val.clump(17).clump(12).postln;
 
@@ -234,9 +239,16 @@ w.drawFunc = {
 
 	var val = msg[1 ..(msg.size-1)] ;
 	var nSensors = ~correlations.nSensors ?? 3;
-	~fftNetwork.data = val.clump(17).clump(12).clump(nSensors);
+	var dataIn = val.clump(17).clump(12).clump(nSensors);
+	~fftNetwork.data = dataIn;
 
 
+	//if(~buffFFTs.notNil,{
+	//	var resamp = ((dataIn.collect( { |dancer|  dancer.collect({|item|    (item.sum/12.0).resamp1(512);}); }  ))[0]).flop.flat;
+
+	//	~buffFFTs.loadCollection(resamp,0);
+
+	//});
 
 
 },"/xsens-fft", recvPort:50003); // path matching

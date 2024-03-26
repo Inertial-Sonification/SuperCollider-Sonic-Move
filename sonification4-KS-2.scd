@@ -112,7 +112,7 @@ SynthDef(\xsensKS,
 
 
 
-			sound=((1.5-(nSample))*0.1*sound) + ((nSample+0.3)*(item.clip(0.0,1.0))*4.0*Sanitize.ar(PMWave.ar( Sanitize.ar(sound.tanh), ((0.97+((2pi*nSample).sin.abs*0.03)).clip(0.0,0.9999)).asAudioRateInput,((0.1 +(0.9 * fftIn[0]))).clip(0.001,0.99).asAudioRateInput, 0.1.asAudioRateInput, 0.00001.asAudioRateInput, 0.1.asAudioRateInput, 0.2.asAudioRateInput,1.0.asAudioRateInput).tanh));
+			sound=((1.5-(nSample))*0.1*sound) + ((nSample+0.3)*(item.clip(0.0,1.0))*4.0*Sanitize.ar(PMWave.ar( Sanitize.ar((sound).tanh), ((0.97+((2pi*nSample).sin.abs*0.03)).clip(0.0,0.9999)).asAudioRateInput,((0.1 +(0.9 * fftIn[0]))).clip(0.001,0.99).asAudioRateInput, 0.1.asAudioRateInput, 0.00001.asAudioRateInput, 0.1.asAudioRateInput, 0.2.asAudioRateInput,1.0.asAudioRateInput).tanh));
 			Sanitize.ar( (nSample/5.0)*sound.tanh);
 
 		});
@@ -133,7 +133,7 @@ SynthDef(\xsensKS,
 
 
 
-~xsensKS=Synth.new(\xsensKS,target:~pGroup);
+~xsensKS=Synth.after(\xsensKS,target:~pGroup);
 )
 
 

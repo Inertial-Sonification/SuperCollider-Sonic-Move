@@ -47,13 +47,13 @@
 		nSample= ((    1.0-((fftData.flop[1]*5.0).clip(0.0,1.0))    )*1.5).clip(0.0,1.0);
 
 		//organize by combo [ [12,13],  [12,23] , [13,23]]
+		//don't take magnetic field
+		corrData=[((corrData[0][0..2])++(corrData[2][0..2])).flat,
+			((corrData[0][0..2])++(corrData[1][0..2])).flat,
+			((corrData[1][0..2])++(corrData[2][0..2])).flat];
 
-		corrData=[(corrData[0]++corrData[2]).flat,
-			(corrData[0]++corrData[1]).flat,
-			(corrData[1]++corrData[2]).flat];
 
-
-		lagTime = 2.0*(ControlDur.ir *(1.0 +( 100.0* (( 1.0 - fftData.flop[0] ))*( 1.0 - fftData.flop[1])      )     ));
+		lagTime = 10000.0*(ControlDur.ir *(1.0 +( 100.0* (( 1.0 - fftData.flop[0] ))*( 1.0 - fftData.flop[1])      )     ));
 		minMaxCorr = corrData.collect({|item|
 			var max = -1;
 			var min = 1;

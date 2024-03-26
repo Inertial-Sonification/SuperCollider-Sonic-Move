@@ -6,25 +6,12 @@
 
 ~sample = Buffer.readChannel(s,"C:/Users/korugaa1/Downloads/0300_oka_ice_w_max_24-02-12.ogg".standardizePath, channels:[0]);
 ~sample = Buffer.readChannel(s,"C:/Users/korugaa1/Downloads/0377_ice_crackling_23-02-16.ogg".standardizePath, channels:[0]);
-[
-"C:/Users/korugaa1/Downloads/577705__mistakeless__strings-chord-4-violin.wav",
-"C:/Users/korugaa1/Downloads/374618__samulis__violin-section-tremolo-f3-vlnens_trem_g2_v2.wav",
-"C:/Users/korugaa1/Downloads/153586__carlos_vaquero__violin-g-4-tenuto-non-vibrato.wav"
-]
-
-~sample2 = Buffer.readChannel(s,"C:/Users/korugaa1/Downloads/PaliMeursault-SurPlaceEybens.mp3".standardizePath, channels:[0]);
+~sample = Buffer.readChannel(s,"C:/Users/korugaa1/Downloads/forest.wav".standardizePath, channels:[0]);
 
 (
 ~grainSynth.free;
 
 ~sample.do(_.free);
-
-
-~samples1=[
-"C:/Users/korugaa1/Downloads/577705__mistakeless__strings-chord-4-violin.wav",
-"C:/Users/korugaa1/Downloads/374618__samulis__violin-section-tremolo-f3-vlnens_trem_g2_v2.wav",
-"C:/Users/korugaa1/Downloads/153586__carlos_vaquero__violin-g-4-tenuto-non-vibrato.wav"
-];
 
 ~samples=
 [
@@ -33,10 +20,12 @@
 "C:/Users/korugaa1/Downloads/dronelog24022013lankawirain02.ogg",
 "C:/Users/korugaa1/Downloads/dronelog24022013lankawirain02.ogg",
 "C:/Users/korugaa1/Downloads/PaliMeursault-SurPlaceEybens.mp3",
-"C:/Users/korugaa1/Downloads/372817__samulis__cello-section-vibrato-sustain-c2-susvib_c1_v1_1.wav",
-"C:/Users/korugaa1/Downloads/372817__samulis__cello-section-vibrato-sustain-c2-susvib_c1_v1_1.wav",
-"C:/Users/korugaa1/Downloads/372817__samulis__cello-section-vibrato-sustain-c2-susvib_c1_v1_1.wav"
-
+//"C:/Users/korugaa1/Downloads/372817__samulis__cello-section-vibrato-sustain-c2-susvib_c1_v1_1.wav",
+//"C:/Users/korugaa1/Downloads/372817__samulis__cello-section-vibrato-sustain-c2-susvib_c1_v1_1.wav",
+//"C:/Users/korugaa1/Downloads/372817__samulis__cello-section-vibrato-sustain-c2-susvib_c1_v1_1.wav"
+"C:/Users/korugaa1/Downloads/218941__sluri6__piano-improv-gm.wav",
+"C:/Users/korugaa1/Downloads/218941__sluri6__piano-improv-gm.wav",
+"C:/Users/korugaa1/Downloads/218941__sluri6__piano-improv-gm.wav"
 
 
 //"C:/Users/korugaa1/Downloads/PaliMeursault-SurPlacePort.mp3",
@@ -44,10 +33,8 @@
 ];
 
 ~sample = ~samples.collect({ |item|  Buffer.readChannel(s,item.standardizePath,channels:[0])   });
-~sample1 = ~samples1.collect({ |item|  Buffer.readChannel(s,item.standardizePath,channels:[0])   });
 
 ~sample.do(_.normalize);
-~sample1.do(_.normalize);
 
 
 
@@ -67,7 +54,7 @@
 		var busses = nDancers.collect({|i| nSensors.collect({|j|    ~xsensValues.at("dancer-"++(i+1)++"|sensor-"++(j+1)).getValueBus                          }) }).flat;
 
 		// 12 values for each sensor -> after clump 3 -> [3,3,3,3] - euler++jerk++acceleration++angularVelocity
-		var measures = busses.collect({|bus| In.kr( bus, bus.numChannels).clumps([3,3,3,3,4,1])}); //size [[[3] , 4], 3]
+		var measures = busses.collect({|bus| In.kr( bus, bus.numChannels).clumps([3,3,3,3,4])}); //size [[[3] , 4], 3]
 
 		//2 values for each param channel -> 12 params *2 values *3 sensors= 72 -> out size 2 measures,3 axes, 4 params ,3 sensors
 		var fftData = In.kr(~fftNetwork.getBus,~fftNetwork.getBus.numChannels).clump(2).clump(3).clump(4);             //flop.collect({|item| Mix.kr(item)})/(~fftNetwork.getBus.numChannels/2);
@@ -90,7 +77,7 @@
 
 		var minMaxCorr;
 
-		var lagTime, quadrant;
+		var lagTime;
 
 
 		amp=amp*energy;
@@ -145,51 +132,52 @@
 		//spread = Lag.kr(preset[3].stutter(2),lagTime);
 		//modulation = Lag.kr(preset[4].stutter(2),lagTime);
 		//xFadeMod = Lag.kr(preset[5].stutter(2),lagTime);
-		quadrant=measures.collect({|item|item[5]/125.0 }).asAudioRateInput;
+
 
 		out = (((cos( (minMaxCorr.flat + 1.0)*pi).abs+0.3)*(amp.stutter(2))*2.0).flat).collect({
 			|item,i|
-
+			var corr=minMaxCorr.flat[i];
 			var fftIn = fftData[i/2] ;
-			var ptr=  ( (fftIn[0]*((   ((measures[i/2][0]).mod(2pi)/2pi)*((measures[i/2][0]).mod(2pi)/2pi)).sum.sqrt))  ).wrap(0.06,0.994);
 
-			var wSize = ( (1.0-(fftIn[0]*fftIn[1]*20.0))/10.0).clip(0.01,1.0); //higher frequency smaller window
-			var prob  =  1.0.asAudioRateInput;// Lag.ar((amp[i/2]*4.0).asAudioRateInput,0.2).clip(0.001,1.0);
-			var wRand = (quadrant[i/2]).wrap(0.0,0.05);
-			var freqScale = (1.0 +Lag.ar(( ((fftIn[0]*10.0) -1.0)/10.0).clip(0.0,4.0).asAudioRateInput, (10.0*lagTime[i/2]))      );
-			var nSample = ((    1.0-((fftIn[1]*~samples.size).clip(0.0,1.0))    )*1.5*~samples.size).clip(0.0,~samples.size).lincurve(0.0,~samples.size,0.0,~samples.size,-7);
-			var sound =(item.clip(0.0,1.0))* 4.0*SelectXFocus.ar(nSample , ~sample.collect({|sample| (
+			var nSample = ((    1.0-((fftIn[1]*~samples.size).clip(0.0,1.0))    )*1.5*~samples.size).clip(0.0,~samples.size).lincurve(0.0,~samples.size,0.0,~samples.size,-5);
+			var nnSample = (1.0- (nSample/~samples.size));
+			var ptr=  ((nnSample*( (fftIn[0]*((   ((measures[i/2][0]).mod(2pi)/2pi)*((measures[i/2][0]).mod(2pi)/2pi)).sum.sqrt)) )));
 
-				(3*WarpP.ar(1, sample, ptr.asAudioRateInput, freqScale.asAudioRateInput, wSize.asAudioRateInput, windowRandRatio:wRand.asAudioRateInput, prob:1.0.asAudioRateInput))
-
-
-				+
-
+			var wSize =  ((1.0-(fftIn[0]*fftIn[1]*20.0))).clip(0.01,1.0); //higher frequency smaller window
+			var prob  =  (Lag.ar((amp[i/2]*4.0).asAudioRateInput,0.2).clip(0.001,1.0));
+			var wRand = ((fftIn[1]*0.1).clip(0.0,0.03));
+			var freqScale = 1.0.asAudioRateInput;
+			var sound = SelectXFocus.ar(nSample , ~sample.collect({|sample|
+				var idx =Phasor.ar(0, BufRateScale.kr(sample), 0, BufFrames.kr(sample))/BufFrames.kr(sample);
+				var pt=(ptr*100.0)/BufFrames.kr(sample);
 				(
-					(nSample/~samples.size)*2*(//(WarpP.ar(1, sample, ptr.asAudioRateInput, (freqScale/2)+(0.1*measures[i/2][4][0]), wSize.asAudioRateInput, windowRandRatio:wRand.asAudioRateInput, prob:prob.asAudioRateInput))+
-						(    (Integrator.kr( (measures[i/2][2][0]).abs,0.95 ).clip(0.1,1.0) - 0.1) *WarpP.ar(1, ~sample1[0], ptr.asAudioRateInput*0.5+0.3, (freqScale*3)+((0.0125*measures[i/2][4][1])), 4*wSize.asAudioRateInput, windowRandRatio:wRand.asAudioRateInput, prob:prob.asAudioRateInput))+
-						(  (Integrator.kr(  (measures[i/2][2][1]).abs,0.95).clip(0.1,1.0) - 0.1)   *WarpP.ar(1, ~sample1[1], ptr.asAudioRateInput*0.5+0.3, (freqScale*0.5)+(0.0125*measures[i/2][4][2]),4* wSize.asAudioRateInput, windowRandRatio:wRand.asAudioRateInput, prob:prob.asAudioRateInput))+
-						( ( Integrator.kr(  ( (measures[i/2][2][2] ).abs),0.95 ).clip(0.1,1.0) - 0.1) *WarpP.ar(1, ~sample1[2], ptr.asAudioRateInput*0.5+0.3, (freqScale*0.7)+(0.0125*measures[i/2][4][3]), 4*wSize.asAudioRateInput, windowRandRatio:wRand.asAudioRateInput, prob:prob.asAudioRateInput))    )//,2.0,Lag.ar(6*lagTime[i/2].asAudioRateInput,10.0)+0.5,1.8)
-				)
-				+
-
-
-				((2.0)*WarpP.ar(1, sample, ptr.asAudioRateInput, Lag.ar(freqScale*0.5,lagTime[i/2]), wSize.asAudioRateInput, windowRandRatio:wRand.asAudioRateInput, prob:prob.asAudioRateInput))
+					(WarpP.ar(1, sample, (idx + pt.asAudioRateInput).wrap(0.05,0.95), freqScale*(1+(i/12.0))*((corr/2)+1.0), wSize.asAudioRateInput, windowRandRatio:wRand.asAudioRateInput, prob:prob.asAudioRateInput))  +
+				(WarpP.ar(1, sample,(idx + pt.asAudioRateInput).wrap(0.05,0.95), freqScale*(1+(i/12.0))*((corr/2)+1.0), wSize.asAudioRateInput, windowRandRatio:wRand.asAudioRateInput, prob:prob.asAudioRateInput))+
+				(WarpP.ar(1, sample, (idx + pt.asAudioRateInput).wrap(0.05,0.95), freqScale*(1+(i/12.0))*((corr/2)+1.0), wSize.asAudioRateInput, windowRandRatio:wRand.asAudioRateInput, prob:prob.asAudioRateInput))+
+				((0.0)*WarpP.ar(1, sample, ptr.asAudioRateInput, freqScale*0.333, wSize.asAudioRateInput, windowRandRatio:wRand.asAudioRateInput, prob:prob.asAudioRateInput))
 
 
 
 
 
 
-			) }),((1.0-  ( (  ((lagTime[i/2])-0.09)*18.0).clip(0.0,1.0)  )  )).clip(0.3,inf),false);
-sound
 
+
+				//+((1.0)*WarpP.ar(1, sample, (ptr.asAudioRateInput+(0.1*(measures[i/2][0][0]))).wrap(0.0,1.0), freqScale*(1+(0.2*(measures[i/2][0][0]))), wSize.asAudioRateInput *(1+(0.1*(measures[i/2][0][0]))) , windowRandRatio:wRand.asAudioRateInput, prob:prob.asAudioRateInput))
+				//+((1.0)*WarpP.ar(1, sample, (ptr.asAudioRateInput+(0.1*(measures[i/2][0][1]))).wrap(0.0,1.0), freqScale*(1+(0.2*(measures[i/2][0][1]))), wSize.asAudioRateInput*(1+(0.1*(measures[i/2][0][0]))), windowRandRatio:wRand.asAudioRateInput, prob:prob.asAudioRateInput))
+				//+ ((1.0)*WarpP.ar(1, sample, (ptr.asAudioRateInput+(0.1*(measures[i/2][0][2]))).wrap(0.0,1.0), freqScale*(1+(0.2*(measures[i/2][0][2]))), wSize.asAudioRateInput*(1+(0.1*(measures[i/2][0][0]))), windowRandRatio:wRand.asAudioRateInput, prob:prob.asAudioRateInput))
+
+
+
+			) }),0.5,false);
+sound*item
+			//(((1.5-(nSample/~samples.size)))*2*sound) + ((nSample/~samples.size+0.6)*Sanitize.ar(PMWave.ar( Sanitize.ar(sound.tanh), ((0.6+(nSample/(~samples.size*6))).clip(0.0,0.9999)).asAudioRateInput,(1.0-(0.1 +(0.9 * fftIn[0]))).clip(0.001,0.99).asAudioRateInput, 0.1.asAudioRateInput, 0.00001.asAudioRateInput, 0.1.asAudioRateInput, 0.2.asAudioRateInput,1.0.asAudioRateInput).tanh));
 
 		});
 
-		out=( -9.dbamp)*[out[0]+out[2]+out[4],out[1]+out[3]+out[5]];
+		out=( 0.dbamp)*[out[0]+out[2]+out[4],out[1]+out[3]+out[5]];
 
-		OffsetOut.ar(~outputBus.index+2 ,Sanitize.ar( Sanitize.ar(out/6.0).tanh))
+		OffsetOut.ar(~outputBus.index+2 ,Sanitize.ar( Sanitize.ar(out).tanh))
 
 
 
@@ -208,17 +196,13 @@ sound
 ~grainSynth=Synth.new(\xsensGrain,target:~pGroup);
 )
 
-
+SinOsc.ar(((fftData.flop[0][i/2]).poll*30.0),0.3,(nSample/~samples.size)*corr,1.0-(nSample/~samples.size)).abs*(item.clip(0.0,1.0))*
 ~fftNetwork.getFFTStatsDancerAllSensors(1)[0].size
 ~fftNetwork.getBus
 
 
 
 ((0 .. 100)/100).lincurve(0.0,1.0,0.0,1.0,-6).plot
-
-
-~xsensValues.at("dancer-1|sensor-1").enumerateQuadrantStates
-Quarks.gui
 
 
 

@@ -1,7 +1,7 @@
 (
 
  SynthDef(\xsensNNFO,
-	{|bus = 0/*28*/, amp = 0.1, variation = 1.5, freq = 50.0, spread = 0.04, modulation = 0.02, xFadeMod = 0.4, inputBus |
+	{|bus = 28, amp = 0.1, variation = 1.5, freq = 50.0, spread = 0.04, modulation = 0.02, xFadeMod = 0.4, inputBus |
 		var out;
 
 		var nDancers = ~correlations.nDancers;
@@ -71,7 +71,7 @@ amp=amp/20.0;
 
 
 
-		out = (cos( (minMaxCorr.flat + 1.0)*pi).abs)*(amp.stutter(2))*FBNeuron.ar(
+		out = FBNeuron.ar(
 			(freq*variation).asAudioRateInput,
 			freq.asAudioRateInput,
 			spread.asAudioRateInput+(3.0*fftData.flop[1].asAudioRateInput),//* ((fftData[1]*10.0).asAudioRateInput)).clip(0,16),
@@ -81,7 +81,7 @@ amp=amp/20.0;
 
 		out=[out[0]+out[2]+out[4],out[1]+out[3]+out[5]];
 
-		OffsetOut.ar(bus ,Sanitize.ar( Sanitize.ar(out).tanh))
+		OffsetOut.ar(bus ,Sanitize.ar( Sanitize.ar(out).tanh.poll))
 
 
 

@@ -11,7 +11,7 @@
 Server.default.options.devices
 
 (
-s.options.numWireBufs=512;
+s.options.numWireBufs=512*512;
 s.options.numBuffers = 1024 * 256; // increase this if you need to load more samples
 s.options.memSize = 4096 * 256; // increase this if you get "alloc failed" messages
 s.options.maxNodes = 1024 * 32; // increase this if you are getting drop outs and the message "too many nodes"

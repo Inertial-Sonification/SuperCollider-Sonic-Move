@@ -58,11 +58,10 @@ SynthDef(\gendyXsens,{
 
 
 		//organize by combo [ [12,13],  [12,23] , [13,23]]
-
-		corrData=[(corrData[0]++corrData[2]).flat,
-			(corrData[0]++corrData[1]).flat,
-			(corrData[1]++corrData[2]).flat];
-
+//don't take magnetic field
+		corrData=[((corrData[0][0..2])++(corrData[2][0..2])).flat,
+			((corrData[0][0..2])++(corrData[1][0..2])).flat,
+			((corrData[1][0..2])++(corrData[2][0..2])).flat];
 		corrData = Lag.kr(corrData , 1.0);
 
 

@@ -2,7 +2,7 @@
 
 SynthDef(\Mixing,
 	{
-		var sound = In.ar(~outputBus,12);
+		var sound = In.ar(~outputBus,12) ;//* [0,0,1,1, 0,0,0,0, 0,0,0,0 ,0,0,0,0];
 		var ampOthers= Amplitude.ar(  Mix.ar(sound[0..5]),1.5,1.0 );
 			sound[8]=(sound[8]) * (1.0-(10.0* (ampOthers>( -18.dbamp))*ampOthers     ).clip(0.0,1.0));
 			sound[9]=(sound[9]) * (1.0-(10.0* (ampOthers>( -18.dbamp))*ampOthers     ).clip(0.0,1.0));
@@ -34,4 +34,9 @@ SynthDef(\Mixing,
 )
 
 
-[0,1,2,3][2..3] ++ (0!8)
+
+
+
+
+
+
